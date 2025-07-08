@@ -1,3 +1,5 @@
+#include <IRremote.hpp>
+
 const int pattern[10][7] = {{HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, LOW},
                             {LOW, HIGH, HIGH, LOW, LOW, LOW, LOW},
                             {HIGH, HIGH, LOW, HIGH, HIGH, LOW, HIGH},
@@ -11,7 +13,9 @@ const int pattern[10][7] = {{HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, LOW},
 
 const int pinNo[7] = {2, 3, 4, 5, 6, 7, 8};
 
-int point = 5;
+const int IR_RECEIVE_PIN = 9;
+
+int point = 0;
 bool isCountdown = true;
 
 void displayDigit(int digit) {
@@ -30,6 +34,10 @@ void countdown() {
   for (int i = 9; i >= 0; i--) {
     displayDigit(i);
     delay(1000);
+    if (IrReceiver.decode()) {
+      point++;
+      IrReceiver.resume();
+    }
   }
 }
 
@@ -44,6 +52,7 @@ void setup() {
   for (int i = 0; i < 7; i++) {
     pinMode(pinNo[i], OUTPUT);
   }
+  IrReceiver.begin(IR_RECEIVE_PIN, false);
 }
 
 void loop() {
