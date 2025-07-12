@@ -1,14 +1,40 @@
 #include <IRremote.hpp>
 
-#define IR_SEND_PIN 4 // IR送信ピン
-const uint8_t BUTTON_PIN = 7;     // 攻撃ボタン入力ピン
-const uint8_t RECV_PIN = 8;       // IR受信ピン
+#define IR_SEND_PIN 10 // IR送信ピン
+const uint8_t BUTTON_PIN = 11;     // 攻撃ボタン入力ピン
+const uint8_t RECV_PIN = 13;       // IR受信ピン
 const uint8_t LED_PIN = 9;        // LED出力ピン（ヒット表示用）
 const uint8_t REROAD_PIN = 12;    // リロードボタンピン
 
 const unsigned long STUN_DURATION_MS = 5000;           // スタン時間
 const unsigned long RELOAD_COOLDOWN_MS = 5000;         // リロードのクールタイム
-const uint8_t MAX_BULLET_NUM = 17;                      // 弾数の最大値
+const uint8_t MAX_BULLET_NUM = 9;                      // 弾数の最大値
+
+// 7セグに表示するパターン
+
+const int DIGIT_PATTERN[10][7] = {
+  {HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, LOW}, 
+  {LOW, HIGH, HIGH, LOW, LOW, LOW, LOW},     
+  {HIGH, HIGH, LOW, HIGH, HIGH, LOW, HIGH},  
+  {HIGH, HIGH, HIGH, HIGH, LOW, LOW, HIGH},  
+  {LOW, HIGH, HIGH, LOW, LOW, HIGH, HIGH},   
+  {HIGH, LOW, HIGH, HIGH, LOW, HIGH, HIGH},  
+  {HIGH, LOW, HIGH, HIGH, HIGH, HIGH, HIGH}, 
+  {HIGH, HIGH, HIGH, LOW, LOW, LOW, LOW},    
+  {HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH},
+  {HIGH, HIGH, HIGH, HIGH, LOW, HIGH, HIGH}  
+};
+
+const int LOADING_PATTERN[6][7] = {
+  {HIGH, LOW, LOW, LOW, LOW, LOW, LOW}, // 1
+  {LOW, HIGH, LOW, LOW, LOW, LOW, LOW}, // 2
+  {LOW, LOW, HIGH, LOW, LOW, LOW, LOW}, // 3
+  {LOW, LOW, LOW, HIGH, LOW, LOW, LOW}, // 4
+  {LOW, LOW, LOW, LOW, HIGH, LOW, LOW}, // 5
+  {LOW, LOW, LOW, LOW, LOW, HIGH, LOW}  // 6
+};
+
+const int pinNo[7] = {2, 3, 4, 5, 6, 7, 8};
 
 unsigned long stunStartTime = 0;
 unsigned long lastReloadTime = 0;
@@ -18,6 +44,17 @@ uint8_t bulletNum;
 
 bool prevButtonState = HIGH;
 bool prevReloadState = HIGH;
+
+// 7セグ制御用
+int currentDigit = 0;
+unsigned long lastUpdateTime = 0;
+const long interval = 100;
+
+void displayDigit(int digit) {
+  for (int i = 0; i < 7; i++) {
+    digitalWrite(pinNo[i], !DIGIT_PATTERN[digit][i]);
+  }
+}
 
 void setup() {
   bulletNum = MAX_BULLET_NUM;
@@ -30,10 +67,17 @@ void setup() {
   IrReceiver.begin(RECV_PIN, true);
   IrSender.begin(IR_SEND_PIN, true, 0);
 
+  for (int i = 0; i < 7; i++) {
+    pinMode(pinNo[i], OUTPUT);
+    digitalWrite(pinNo[i], HIGH);
+  }
+
   Serial.println("Arduino IR Game Ready!");
 }
 
 void loop() {
+  displayDigit(bulletNum);
+
   // スタン状態解除
   if (isStunned && (millis() - stunStartTime >= STUN_DURATION_MS)) {
     isStunned = false;
