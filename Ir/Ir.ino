@@ -6,6 +6,7 @@ const uint8_t RECV_PIN = 13;    // IR受信ピン
 const uint8_t LED_PIN = 9;      // LED出力ピン（ヒット表示用）
 const uint8_t REROAD_PIN = 12;  // リロードボタンピン
 
+
 const unsigned long STUN_DURATION_MS = 5000;    // スタン時間
 const unsigned long RELOAD_COOLDOWN_MS = 5000;  // リロードのクールタイム
 const uint8_t MAX_BULLET_NUM = 9;              // 弾数の最大値
