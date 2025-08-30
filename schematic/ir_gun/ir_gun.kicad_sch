@@ -4167,7 +4167,7 @@
 				)
 			)
 		)
-		(property "Value" "220kΩ"
+		(property "Value" "220Ω"
 			(at 138.43 73.66 90)
 			(effects
 				(font
