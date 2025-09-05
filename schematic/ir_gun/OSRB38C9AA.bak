@@ -7,7 +7,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(property "Reference" "OSRB38C9AA"
-			(at 0 4.826 0)
+			(at 0 5.588 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -49,9 +49,22 @@
 				(hide yes)
 			)
 		)
+		(symbol "OSRB38C9AA_0_1"
+			(rectangle
+				(start -6.35 3.81)
+				(end 6.35 -3.81)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
 		(symbol "OSRB38C9AA_1_1"
 			(pin passive line
-				(at -3.81 -8.89 90)
+				(at -3.81 -6.35 90)
 				(length 2.54)
 				(name "Output"
 					(effects
@@ -69,7 +82,7 @@
 				)
 			)
 			(pin passive line
-				(at 0 -8.89 90)
+				(at 0 -6.35 90)
 				(length 2.54)
 				(name "GND"
 					(effects
@@ -87,7 +100,7 @@
 				)
 			)
 			(pin passive line
-				(at 3.81 -8.89 90)
+				(at 3.81 -6.35 90)
 				(length 2.54)
 				(name "Vcc"
 					(effects

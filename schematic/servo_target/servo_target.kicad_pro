@@ -250,7 +250,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "ir_gun.kicad_pro",
+    "filename": "servo_target.kicad_pro",
     "version": 3
   },
   "net_settings": {
@@ -410,7 +410,7 @@
   },
   "sheets": [
     [
-      "8546f64b-773f-4ba6-b103-bd014cc08784",
+      "dc0c44fd-f5a7-4846-9022-a4e428c862ad",
       "Root"
     ]
   ],
