@@ -33,12 +33,15 @@ int lastButtonState = HIGH;
 unsigned long lastDebounceTime = 0;
 unsigned long debounceDelay = 50;
 
+unsigned long time;
+
 // servo
 Servo servos[4];
 const uint8_t SERVO_PINS[4] = { 5, 6, 9, 10 };
 uint8_t currentServo;
 
 void setup() {
+  time = millis();
   // pinModeでA0を出力に設定する前に、アナログ値を読み取って乱数シードを生成
   randomSeed(analogRead(0));
 
@@ -48,6 +51,8 @@ void setup() {
   pinMode(SER, OUTPUT);
 
   Serial.begin(115200);
+  Serial.println(time);
+  
   pinMode(START_BUTTON, INPUT_PULLUP);
   IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK);
 
@@ -91,6 +96,11 @@ void loop() {
   lastButtonState = reading;
 
   if (IrReceiver.decode() && is_startgame) {
+    tone(11, 187, 100);
+    delay(100);
+    noTone(11);
+    delay(5);
+
     score++;
     servos[currentServo].write(0);
 
