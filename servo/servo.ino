@@ -31,25 +31,8 @@ bool is_startgame = false;
 int buttonState;
 int lastButtonState = HIGH;
 unsigned long lastDebounceTime = 0;
-unsigned long debounceDelay = 50;
-
-unsigned long time;
-
-// servo
-Servo servos[4];
-const uint8_t SERVO_PINS[4] = { 5, 6, 9, 10 };
-uint8_t currentServo;
 
 void setup() {
-  time = millis();
-  // pinModeでA0を出力に設定する前に、アナログ値を読み取って乱数シードを生成
-  randomSeed(analogRead(0));
-
-  // シフトレジスタ用のピンを出力モードに設定
-  pinMode(SRCLK, OUTPUT);
-  pinMode(RCLK, OUTPUT);
-  pinMode(SER, OUTPUT);
-
   Serial.begin(115200);
   Serial.println(time);
   
