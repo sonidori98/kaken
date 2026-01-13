@@ -1,10 +1,11 @@
 #include <IRremote.hpp>
 
+
 #define IR_SEND_PIN 4 // IR送信ピン
 
 const uint8_t BUTTON_PIN = 7;     // 攻撃ボタン入力ピン
 const uint8_t RECV_PIN = 8;       // IR受信ピン
-const uint8_t LED_PIN = 9;        // LED出力ピン（ヒット表示用）
+const uint8_t BUZZER_PIN = 5;     // ブザー出力ピン（ヒット表示用）
 const uint8_t REROAD_PIN = 12;    // リロードボタンピン
 
 const uint8_t BLUE_PIN = A1;
@@ -15,6 +16,8 @@ const unsigned long RELOAD_COOLDOWN_MS = 5000;    // リロードのクールタ
 const uint8_t MAX_BULLET_NUM = 17;                // 弾数の最大値
 
 const uint8_t DATA = 0xF;
+
+const int HIT_FREQUENCY = 1000; // ヒット時に鳴らす音の周波数（例：1000Hz）
 
 unsigned long stunStartTime = 0;
 unsigned long lastReloadTime = 0;
@@ -31,7 +34,7 @@ void setup() {
 
   delay(2000);
 
-  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(REROAD_PIN, INPUT_PULLUP);
 
@@ -49,11 +52,12 @@ void loop() {
   // スタン状態解除
   if (isStunned && (millis() - stunStartTime >= STUN_DURATION_MS)) {
     isStunned = false;
-    digitalWrite(LED_PIN, LOW);
+    // スタン終了時にブザーを停止
+    noTone(BUZZER_PIN); 
     Serial.println("Stun duration ended. You can move again!");
   }
 
-  // 💡 LED表示更新 (コモンカソード/HIGH点灯 のロジック)
+  // LED表示更新 (コモンカソード/HIGH点灯 のロジック)
   if (isStunned) {
     // スタン状態: 赤点灯, 青消灯
     digitalWrite(RED_PIN, HIGH);
@@ -96,19 +100,23 @@ void loop() {
     Serial.println("Reload on cooldown. Please wait...");
   }
 
-  // 📡 被弾処理（IR受信）- デバッグのため受信内容を全て表示
+  // 📡 被弾処理（IR受信）
   if (IrReceiver.decode()) {
     // 受信した信号をシリアルに出力して確認
     Serial.print("Received IR Signal: ");
     IrReceiver.printIRResultShort(&Serial);
     Serial.println();
 
-    // プロトコルがUNKNOWNでなく、DATA(0xE)でない場合に被弾
+    // プロトコルがUNKNOWNでなく、DATAでない場合に被弾
     if (IrReceiver.decodedIRData.protocol != UNKNOWN && IrReceiver.decodedIRData.command != DATA) {
-      isStunned = true;
-      stunStartTime = millis();
-      digitalWrite(LED_PIN, HIGH);
-      Serial.println("!! HIT !! You are stunned!");
+      if (!isStunned) { // 既にスタン状態でなければ音を鳴らす
+        isStunned = true;
+        stunStartTime = millis();
+        // 被弾時にブザーを鳴らす (音を鳴らし続ける)
+        // tone(BUZZER_PIN, HIT_FREQUENCY); 
+        beep(BUZZER_PIN, HIT_FREQUENCY, 1000);
+        Serial.println("!! HIT !! You are stunned!");
+      }
     }
     IrReceiver.resume();
   }
@@ -119,3 +127,17 @@ void loop() {
 
   delay(10);
 }
+
+void beep(int pin, int freq, int duration) {
+  int period = 1000000L / freq;
+  int half = period / 2;
+  long cycles = (long)freq * duration / 1000;
+
+  for (long i = 0; i < cycles; i++) {
+    digitalWrite(pin, HIGH);
+    delayMicroseconds(half);
+    digitalWrite(pin, LOW);
+    delayMicroseconds(half);
+  }
+}
+

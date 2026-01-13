@@ -32,9 +32,13 @@ int buttonState;
 int lastButtonState = HIGH;
 unsigned long lastDebounceTime = 0;
 
+Servo servos[4];
+const int SERVO_PINS[] = {5, 6, 9, 10};
+int currentServo = 0;
+const unsigned long debounceDelay = 50;
+
 void setup() {
   Serial.begin(115200);
-  Serial.println(time);
   
   pinMode(START_BUTTON, INPUT_PULLUP);
   IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK);
