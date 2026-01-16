@@ -12,9 +12,10 @@ const uint8_t RED_PIN = A2;
 
 const unsigned long STUN_DURATION_MS = 5000;
 const unsigned long RELOAD_COOLDOWN_MS = 5000;
-const uint8_t MAX_BULLET_NUM = 17;
+const uint8_t MAX_BULLET_NUM = 10;
 
-const uint8_t DATA = 0xF;
+// 書き込む前に必ず確認
+const uint8_t DATA = 0xD;
 
 unsigned long stunStartTime = 0;
 unsigned long lastReloadTime = 0;
@@ -26,6 +27,9 @@ uint8_t bulletNum;
 bool prevButtonState = HIGH;
 bool prevReloadState = HIGH;
 bool blinkState = LOW;
+
+const uint8_t LIFE_LEDS[] = {9, 10, 11};
+uint8_t current_life = 3;
 
 void setup() {
   bulletNum = MAX_BULLET_NUM;
@@ -39,6 +43,10 @@ void setup() {
 
   pinMode(BLUE_PIN, OUTPUT);
   pinMode(RED_PIN, OUTPUT);
+
+  for (size_t i = 0; i < 3; i++) {
+    pinMode(LIFE_LEDS[i], OUTPUT);
+  }
 
   IrReceiver.begin(RECV_PIN, true);
   IrSender.begin(IR_SEND_PIN, true, 0);
@@ -59,19 +67,35 @@ void loop() {
   bool isReloading = (currentMillis - lastReloadTime < RELOAD_COOLDOWN_MS);
 
   if (isStunned) {
-    // スタン時：赤点灯（最優先）
+    // 【優先度1】スタン時：赤点灯
     digitalWrite(RED_PIN, HIGH);
     digitalWrite(BLUE_PIN, LOW);
-  } else if (isReloading) {
-    // リロード中：赤点滅 / 青消灯
+  } 
+  else if (isReloading) {
+    // 【優先度2】リロード中：赤点滅（200ms間隔）
     digitalWrite(BLUE_PIN, LOW);
-    if (currentMillis - lastBlinkTime >= 200) {  // 200ms間隔で反転
+    if (currentMillis - lastBlinkTime >= 200) {
       lastBlinkTime = currentMillis;
       blinkState = !blinkState;
       digitalWrite(RED_PIN, blinkState);
     }
-  } else {
-    // 通常時：青点灯 / 赤消灯
+  } 
+  else if (bulletNum == 0) {
+    // 【優先度3】弾切れ時：青（長め）と赤（短め）の交互点滅
+    // 1000ms（1秒）周期で計算
+    unsigned long cycleTime = currentMillis % 1000; 
+    if (cycleTime < 800) { 
+      // 0〜799msの間は青
+      digitalWrite(BLUE_PIN, HIGH);
+      digitalWrite(RED_PIN, LOW);
+    } else {
+      // 800〜999msの間（200ms間）だけ赤
+      digitalWrite(BLUE_PIN, LOW);
+      digitalWrite(RED_PIN, HIGH);
+    }
+  } 
+  else {
+    // 【優先度4】通常時：青点灯
     digitalWrite(RED_PIN, LOW);
     digitalWrite(BLUE_PIN, HIGH);
   }
@@ -82,14 +106,16 @@ void loop() {
 
   // 攻撃
   if (prevButtonState == HIGH && currentButtonState == LOW && !isStunned && bulletNum > 0 && !isReloading) {
-
     bulletNum--;
     IrSender.sendNEC(0x6380, DATA, 0);
     Serial.print("Fired! Bullets left: ");
     Serial.println(bulletNum);
-
-  } else if (prevButtonState == HIGH && currentButtonState == LOW && isReloading) {
-    Serial.println("Cannot attack during reload cooldown.");
+    
+    if(bulletNum == 0) {
+      Serial.println("OUT OF AMMO! Need to reload.");
+    }
+  } else if (prevButtonState == HIGH && currentButtonState == LOW && bulletNum == 0 && !isReloading) {
+    Serial.println("No bullets! Reload required.");
   }
 
   // リロード開始
@@ -106,10 +132,27 @@ void loop() {
       if (!isStunned) {
         isStunned = true;
         stunStartTime = currentMillis;
+        if (current_life != 0) {
+          current_life--;
+        }
         Serial.println("!! HIT !! You are stunned!");
       }
     }
     IrReceiver.resume();
+  }
+
+  for (uint8_t i = 0; i < 3; i++) {
+    if (i < current_life) {
+      digitalWrite(LIFE_LEDS[i], HIGH); 
+    } else {
+      digitalWrite(LIFE_LEDS[i], LOW);
+    }
+  }
+
+  if (current_life == 0) {
+    digitalWrite(BLUE_PIN, LOW);
+    digitalWrite(RED_PIN, HIGH);
+    while (true);
   }
 
   prevButtonState = currentButtonState;
